@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tienda de Libros — Propuesta</title>
+
+  <!-- Google Fonts según la propuesta -->
+  <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,400;0,700;1,700&family=Montserrat:wght@500;700&family=Open+Sans:wght@300;400;600&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --verde-bosque: #2C5F2D;
+      --crema: #FAF3E0;
+      --marron-claro: #C97C5D;
+      --negro-suave: #2E2E2E;
+
+      --radius: 12px;
+      --max-width: 1100px;
+    }
+
+    *{box-sizing: border-box}
+    html,body{height:100%;margin:0;font-family:'Open Sans',system-ui,Segoe UI,Roboto,'Helvetica Neue',Arial}
+    body{background:var(--crema);color:var(--negro-suave);-webkit-font-smoothing:antialiased}
+
+    /* Layout */
+    .container{max-width:var(--max-width);margin:28px auto;padding:20px}
+    header{display:flex;align-items:center;justify-content:space-between;gap:16px}
+    .brand{display:flex;align-items:center;gap:12px}
+    .brand h1{font-family:'Merriweather',serif;margin:0;font-size:1.6rem;color:var(--verde-bosque)}
+    .brand small{display:block;font-family:'Montserrat',sans-serif;font-size:0.85rem;color:var(--marron-claro)}
+
+    /* Controls */
+    .controls{display:flex;gap:12px;align-items:center}
+    .search input{padding:8px 12px;border-radius:10px;border:1px solid rgba(46,46,46,0.12);min-width:220px}
+    .genre-select select{padding:8px 10px;border-radius:10px;border:1px solid rgba(46,46,46,0.12)}
+
+    /* Grid */
+    .main{display:grid;grid-template-columns:1fr 320px;gap:22px;margin-top:20px}
+    .catalog{background:white;border-radius:var(--radius);padding:18px;box-shadow:0 6px 18px rgba(46,46,46,0.06)}
+    .catalog-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:18px}
+
+    .book-card{display:flex;flex-direction:column;background:linear-gradient(180deg,#fff,#fff);border-radius:10px;overflow:hidden;border:1px solid rgba(46,46,46,0.06)}
+    .thumb{height:220px;background:#f4efe9;display:flex;align-items:center;justify-content:center}
+    .thumb img{max-width:100%;max-height:100%;object-fit:contain}
+    .meta{padding:12px;flex:1;display:flex;flex-direction:column}
+    .meta h3{margin:0;font-size:1rem;font-family:'Merriweather',serif}
+    .meta p{margin:6px 0 0 0;font-size:0.85rem;color:rgba(46,46,46,0.75);flex:1}
+    .meta .price-row{display:flex;justify-content:space-between;align-items:center;margin-top:10px}
+    .btn{font-family:'Montserrat',sans-serif;border:none;padding:8px 12px;border-radius:10px;cursor:pointer}
+    .btn-primary{background:var(--verde-bosque);color:white}
+    .btn-secondary{background:transparent;color:var(--verde-bosque);border:1px solid rgba(44,95,45,0.12)}
+
+    /* Cart */
+    .cart{background:white;border-radius:var(--radius);padding:18px;box-shadow:0 6px 18px rgba(46,46,46,0.06);height:fit-content}
+    .cart h3{margin-top:0}
+    .cart-list{max-height:300px;overflow:auto;margin-bottom:12px}
+    .cart-item{display:flex;gap:12px;align-items:center;padding:8px 0;border-bottom:1px solid rgba(46,46,46,0.04)}
+    .cart-item strong{font-size:0.95rem}
+
+    /* Modal */
+    .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.4);display:none;align-items:center;justify-content:center;padding:20px}
+    .modal{background:white;border-radius:12px;max-width:800px;width:100%;padding:20px}
+
+    /* Footer */
+    footer{margin-top:28px;text-align:center;color:rgba(46,46,46,0.6)}
+
+    /* Responsive */
+    @media (max-width:900px){
+      .main{grid-template-columns:1fr}
+      .cart{order:2}
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="brand">
+      <div style="width:48px;height:48px;border-radius:10px;background:linear-gradient(135deg,var(--marron-claro),var(--verde-bosque));display:flex;align-items:center;justify-content:center;color:white;font-weight:700">LM</div>
+      <div>
+        <h1>Librería &amp; Más</h1>
+        <small>Descubre, disfruta, compra</small>
+      </div>
+    </div>
+
+    <div class="controls" aria-hidden="false">
+      <div class="search">
+        <input id="searchInput" placeholder="Buscar título, autor o ISBN" aria-label="Buscar libros" />
+      </div>
+      <div class="genre-select">
+        <select id="genreSelect" aria-label="Filtrar por género">
+          <option value="all">Todos los géneros</option>
+        </select>
+      </div>
+      <button id="viewCartBtn" class="btn btn-secondary" aria-haspopup="dialog">Ver carrito</button>
+    </div>
+  </header>
+
+  <main class="main">
+    <section class="catalog" aria-label="Catálogo de libros">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <h2 style="margin:0">Novedades</h2>
+        <small id="resultsCount">0 resultados</small>
+      </div>
+
+      <div class="catalog-grid" id="catalogGrid" role="list"></div>
+    </section>
+
+    <aside class="cart" id="cartPanel" aria-label="Carrito de compras">
+      <h3>Carrito</h3>
+      <div class="cart-list" id="cartList">
+        <p class="empty">Tu carrito está vacío.</p>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <strong>Total:</strong>
+        <strong id="cartTotal">$0.00</strong>
+      </div>
+      <div style="margin-top:12px;display:flex;gap:8px">
+        <button id="checkoutBtn" class="btn btn-primary" disabled>Checkout</button>
+        <button id="clearBtn" class="btn btn-secondary">Vaciar</button>
+      </div>
+    </aside>
+  </main>
+
+  <footer>
+    <small>Quien decide leer un libro vive una y mil vidas más que el que no toma un libro entre sus manos.</small>
+  </footer>
+</div>
+
+<!-- Modal detalle libro -->
+<div class="modal-backdrop" id="modalBackdrop" role="dialog" aria-modal="true">
+  <div class="modal" id="bookModal">
+    <button id="closeModal" class="btn" style="float:right">Cerrar</button>
+    <div id="modalContent"></div>
+  </div>
+</div>
+
+<script>
+  const books = [
+    {id:1,title:'Alas de Sangre',author:'Rebecca Yarros',genre:'Fantasia',price:400.00,desc:'El libro de fantasía más adictivo que he leído en una década.',img:'img/Alas.jpg'},
+    {id:2,title:'Anatomía del mal',author:'Jordi Wild',genre:'Crimen',price:509.00,desc:'8 Crímenes que te harán perder la fe en la humanidad',img:'img/Anatomia.jpg'},
+    {id:3,title:'El jardin de las mariposas',author:'Dot Hutchison',genre:'Crimen',price:300.00,desc:'La belleza nunca antes fue tan aterradora',img:'img/Butter.jpg'},
+    {id:4,title:'No soy un serial Killer',author:'Dan Wells',genre:'Crimen',price:299.50,desc:'La historia detras de un crimen.',img:'img/Killer.jpg'},
+    {id:5,title:'El diario de Ana Frank',author:'Ana Frank',genre:'Auto biografia',price:199.50,desc:'La biografia que no te habian contado.',img:'img/Ana.jpeg'},
+    {id:6,title:'El principito',author:'Antonio de Saint',genre:'Fantasia',price:150.00,desc:'La historia de un principe y su rosa.',img:'img/principito.jpg'}
+  ];
+
+  // Estado
+  let cart = {};
+
+  // Inicialización
+  document.addEventListener('DOMContentLoaded',()=>{
+    populateGenres();
+    renderCatalog(books);
+    setupListeners();
+  });
+
+  function populateGenres(){
+    const genres = Array.from(new Set(books.map(b=>b.genre)));
+    const sel = document.getElementById('genreSelect');
+    genres.forEach(g=>{
+      const opt = document.createElement('option'); opt.value=g; opt.textContent=g; sel.appendChild(opt);
+    });
+  }
+
+  function setupListeners(){
+    document.getElementById('searchInput').addEventListener('input',onFilter);
+    document.getElementById('genreSelect').addEventListener('change',onFilter);
+    document.getElementById('clearBtn').addEventListener('click',()=>{cart={};renderCart();});
+    document.getElementById('checkoutBtn').addEventListener('click',openCheckout);
+    document.getElementById('viewCartBtn').addEventListener('click',()=>{document.getElementById('cartPanel').scrollIntoView({behavior:'smooth'});});
+    document.getElementById('closeModal').addEventListener('click',closeModal);
+  }
+
+  function onFilter(){
+    const q = document.getElementById('searchInput').value.toLowerCase().trim();
+    const g = document.getElementById('genreSelect').value;
+    const filtered = books.filter(b=>{
+      const matchesQ = q==='' || [b.title,b.author,b.genre].join(' ').toLowerCase().includes(q);
+      const matchesG = g==='all' || b.genre===g;
+      return matchesQ && matchesG;
+    });
+    renderCatalog(filtered);
+  }
+
+  function renderCatalog(list){
+    const grid = document.getElementById('catalogGrid'); grid.innerHTML='';
+    document.getElementById('resultsCount').textContent = list.length + (list.length===1? ' resultado':' resultados');
+    if(list.length===0){grid.innerHTML = '<p>No se encontraron libros.</p>';return}
+    list.forEach(book=>{
+      const card = document.createElement('article'); card.className='book-card';
+      const thumb = document.createElement('div'); thumb.className='thumb';
+      const img = document.createElement('img'); img.alt = book.title; img.src = book.img || ('data:image/svg+xml;utf8,'+encodeURIComponent(`<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"200\" height=\"260\"><rect width=\"100%\" height=\"100%\" fill=\"#f4efe9\"/><text x=\"50%\" y=\"50%\" dominant-baseline=\"middle\" text-anchor=\"middle\" font-family=\"Merriweather, serif\" font-size=\"16\" fill=\"#2E2E2E\">Portada</text></svg>`));
+      thumb.appendChild(img);
+
+      const meta = document.createElement('div'); meta.className='meta';
+      const h3 = document.createElement('h3'); h3.textContent = book.title; const p = document.createElement('p'); p.textContent = book.author + ' • ' + book.genre;
+      const priceRow = document.createElement('div'); priceRow.className='price-row';
+      const price = document.createElement('div'); price.textContent = '$' + book.price.toFixed(2);
+      const actions = document.createElement('div');
+      const viewBtn = document.createElement('button'); viewBtn.className='btn btn-secondary'; viewBtn.textContent='Ver'; viewBtn.addEventListener('click',()=>openModal(book));
+      const addBtn = document.createElement('button'); addBtn.className='btn btn-primary'; addBtn.textContent='Añadir'; addBtn.addEventListener('click',()=>addToCart(book));
+      actions.appendChild(viewBtn); actions.appendChild(addBtn);
+
+      priceRow.appendChild(price); priceRow.appendChild(actions);
+      meta.appendChild(h3); meta.appendChild(p); meta.appendChild(priceRow);
+
+      card.appendChild(thumb); card.appendChild(meta);
+      grid.appendChild(card);
+    });
+  }
+
+  function openModal(book){
+    document.getElementById('modalBackdrop').style.display='flex';
+    document.getElementById('modalContent').innerHTML = `
+        <div style="display:flex;gap:18px;align-items:flex-start">
+          <div style="width:220px;height:300px;background:#f4efe9;display:flex;align-items:center;justify-content:center;border-radius:8px">Portada</div>
+          <div style="flex:1">
+            <h2 style="margin-top:0;font-family:'Merriweather',serif">${escapeHtml(book.title)}</h2>
+            <p><em>${escapeHtml(book.author)}</em> • <strong>${escapeHtml(book.genre)}</strong></p>
+            <p>${escapeHtml(book.desc)}</p>
+            <div style="margin-top:12px;display:flex;gap:8px">
+              <button class="btn btn-primary" onclick="addToCartById(${book.id})">Añadir al carrito</button>
+              <button class="btn btn-secondary" onclick="closeModal()">Cerrar</button>
+            </div>
+          </div>
+        </div>
+      `;
+  }
+
+  function closeModal(){document.getElementById('modalBackdrop').style.display='none';}
+
+  function addToCart(book){
+    const id = book.id;
+    cart[id] = cart[id] || {...book, qty:0};
+    cart[id].qty += 1;
+    renderCart();
+  }
+  function addToCartById(id){ const book = books.find(b=>b.id===id); if(book) addToCart(book); closeModal(); }
+
+  function renderCart(){
+    const list = document.getElementById('cartList'); list.innerHTML='';
+    const keys = Object.keys(cart);
+    if(keys.length===0){ list.innerHTML='<p class="empty">Tu carrito está vacío.</p>'; document.getElementById('cartTotal').textContent='$0.00'; document.getElementById('checkoutBtn').disabled=true; return }
+    let total = 0;
+    keys.forEach(k=>{
+      const item = cart[k]; total += item.price * item.qty;
+      const el = document.createElement('div'); el.className='cart-item';
+      el.innerHTML = `<div style="flex:1"><strong>${escapeHtml(item.title)}</strong><br><small>${escapeHtml(item.author)}</small></div><div><span>${item.qty} × $${item.price.toFixed(2)}</span><div style=\"margin-top:6px;display:flex;gap:6px\"><button class=\"btn btn-secondary\" onclick=\"changeQty(${item.id},-1)\">-</button><button class=\"btn btn-secondary\" onclick=\"changeQty(${item.id},1)\">+</button></div></div>`;
+      list.appendChild(el);
+    });
+    document.getElementById('cartTotal').textContent = '$' + total.toFixed(2);
+    document.getElementById('checkoutBtn').disabled = false;
+  }
+
+  function changeQty(id,delta){
+    if(!cart[id]) return; cart[id].qty += delta; if(cart[id].qty<=0) delete cart[id]; renderCart();
+  }
+
+  function openCheckout(){
+    // Modal de checkout simple (sin procesador real)
+    document.getElementById('modalBackdrop').style.display='flex';
+    const items = Object.values(cart).map(i=>`<li>${escapeHtml(i.title)} — ${i.qty} × $${i.price.toFixed(2)}</li>`).join('');
+    document.getElementById('modalContent').innerHTML = `
+        <h2>Resumen de compra</h2>
+        <ul>${items}</ul>
+        <p><strong>Total:</strong> ${document.getElementById('cartTotal').textContent}</p>
+        <form id="checkoutForm">
+          <label>Nombre completo<br><input name="name" required></label><br><br>
+          <label>Correo electrónico<br><input name="email" type="email" required></label><br><br>
+          <label>Dirección de envío<br><input name="address" required></label><br><br>
+          <div style="display:flex;gap:8px"><button type="submit" class="btn btn-primary">Confirmar compra</button><button type="button" class="btn btn-secondary" onclick="closeModal()">Cancelar</button></div>
+        </form>
+      `;
+
+    document.getElementById('checkoutForm').addEventListener('submit',function(e){
+      e.preventDefault();
+      // Simulación de éxito
+      const buyer = new FormData(e.target).get('name');
+      closeModal();
+      alert('Gracias por tu compra, ' + buyer + '! (esto es una demo)');
+      cart = {}; renderCart();
+    });
+  }
+
+  // Utilidades
+  function escapeHtml(str){ return String(str).replace(/[&<>\"']/g,function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c]; }); }
+
+</script>
+</body>
+</html>
+
